@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W Perfume - Catálogo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        marfil: {
+                            50: '#FDFBF7',
+                            100: '#F7F4EB',
+                            200: '#EFEAD8',
+                        },
+                        carbon: {
+                            800: '#1A1A1A',
+                            900: '#121212',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-marfil-50 text-carbon-900 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-carbon-900 text-marfil-50 py-6 px-4 shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-center sm:text-left">
+                <h1 class="text-2xl font-bold tracking-widest uppercase">W Perfume</h1>
+                <p class="text-xs text-marfil-200 tracking-wider">Catálogo Exclusivo de Fragancias</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleAdminPanel()" class="bg-marfil-50 text-carbon-900 text-sm px-4 py-2 rounded-md font-medium hover:bg-marfil-100 transition shadow">
+                    <i class="fa-solid fa-gear mr-2"></i> Administrar Catálogo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 sm:p-6">
+
+        <!-- Search Bar -->
+        <div class="mb-8">
+            <div class="relative max-w-md mx-auto">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Buscar perfume por nombre o notas..." class="w-full pl-10 pr-4 py-3 bg-white border border-marfil-200 rounded-lg text-carbon-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-carbon-900 shadow-sm">
+            </div>
+        </div>
+
+        <!-- Admin Panel (Hidden by default) -->
+        <div id="adminPanel" class="hidden mb-12 bg-white border border-marfil-200 p-6 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6 pb-3 border-b border-marfil-200">
+                <h2 class="text-xl font-bold text-carbon-900"><i class="fa-solid fa-sliders mr-2"></i> Panel de Administración</h2>
+                <button onclick="toggleAdminPanel()" class="text-gray-500 hover:text-carbon-900"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <!-- WhatsApp Configuration -->
+            <div class="mb-6 bg-marfil-50 p-4 rounded-lg border border-marfil-200">
+                <label class="block text-sm font-semibold mb-2">Número de WhatsApp (con código de país, sin el +):</label>
+                <div class="flex gap-2">
+                    <input type="text" id="whatsappNumber" placeholder="Ej: 584121234567" class="flex-grow px-3 py-2 bg-white border border-marfil-200 rounded-md text-sm">
+                    <button onclick="saveWhatsapp()" class="bg-carbon-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-carbon-800">Guardar Número</button>
+                </div>
+            </div>
+
+            <!-- Add / Edit Product Form -->
+            <form id="productForm" onsubmit="saveProduct(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="hidden" id="productId">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nombre del Perfume</label>
+                    <input type="text" id="prodName" required class="w-full px-3 py-2 border border-marfil-200 rounded-md text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Precio ($ o Moneda)</label>
+                    <input type="text" id="prodPrice" required class="w-full px-3 py-2 border border-marfil-200 rounded-md text-sm" placeholder="Ej: $35.00">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Descripción / Notas Olfativas</label>
+                    <textarea id="prodDesc" rows="2" class="w-full px-3 py-2 border border-marfil-200 rounded-md text-sm" placeholder="Notas de salida, corazón..."></textarea>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Imagen (Sube una foto de tu archivo o pega un Link)</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="file" id="prodImageFile" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-carbon-900 file:text-white hover:file:bg-carbon-800">
+                    </div>
+                    <input type="hidden" id="prodImageBase64">
+                </div>
+                <div class="sm:col-span-2 flex justify-end gap-2 mt-2">
+                    <button type="button" onclick="resetForm()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="bg-carbon-900 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-carbon-800">Guardar Perfume</button>
+                </div>
+            </form>
+
+            <!-- Product Management List -->
+            <div class="mt-8">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-gray-600 mb-3">Perfumes Registrados</h3>
+                <div id="adminProductList" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                    <!-- Dynamic List -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalog Grid -->
+        <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Products injected by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16">
+            <i class="fa-solid fa-spray-can-sparkles text-4xl text-gray-400 mb-3"></i>
+            <p class="text-gray-600 font-medium">No hay perfumes disponibles en este momento.</p>
+            <p class="text-sm text-gray-400 mt-1">Usa "Administrar Catálogo" para añadir tus productos.</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-carbon-900 text-marfil-50 py-6 text-center text-xs mt-auto border-t border-carbon-800">
+        <p>&copy; 2026 W Perfume. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Script Application Logic -->
+    <script>
+        let products = JSON.parse(localStorage.getItem('w_perfume_items')) || [
+            { id: '1', name: 'Valentino Uomo Noir Absolu', price: '$45.00', desc: 'Acordes especiados, cuero negro y sándalo intenso.', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=600&q=80' },
+            { id: '2', name: 'Erba Pura Custom', price: '$40.00', desc: 'Explosión frutal cítrica con almizcle blanco y ámbar.', image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80' }
+        ];
+
+        let whatsappNumber = localStorage.getItem('w_perfume_whatsapp') || '584121234567';
+        document.getElementById('whatsappNumber').value = whatsappNumber;
+
+        // Image file converter
+        document.getElementById('prodImageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    document.getElementById('prodImageBase64').value = uploadEvent.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            panel.classList.toggle('hidden');
+            if(!panel.classList.contains('hidden')) {
+                renderAdminList();
+            }
+        }
+
+        function saveWhatsapp() {
+            const num = document.getElementById('whatsappNumber').value.trim();
+            if(num) {
+                whatsappNumber = num;
+                localStorage.setItem('w_perfume_whatsapp', whatsappNumber);
+                alert('¡Número de WhatsApp guardado con éxito!');
+            }
+        }
+
+        function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('productId').value;
+            const name = document.getElementById('prodName').value;
+            const price = document.getElementById('prodPrice').value;
+            const desc = document.getElementById('prodDesc').value;
+            let image = document.getElementById('prodImageBase64').value;
+
+            if(!image && id) {
+                // keep old image if editing and no new image uploaded
+                const existing = products.find(p => p.id === id);
+                if(existing) image = existing.image;
+            }
+            if(!image) {
+                image = 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=600&q=80';
+            }
+
+            if(id) {
+                products = products.map(p => p.id === id ? { id, name, price, desc, image } : p);
+            } else {
+                const newProd = { id: Date.now().toString(), name, price, desc, image };
+                products.push(newProd);
+            }
+
+            localStorage.setItem('w_perfume_items', JSON.stringify(products));
+            resetForm();
+            renderCatalog();
+            renderAdminList();
+        }
+
+        function resetForm() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productForm').reset();
+            document.getElementById('prodImageBase64').value = '';
+        }
+
+        function editProduct(id) {
+            const p = products.find(prod => prod.id === id);
+            if(p) {
+                document.getElementById('productId').value = p.id;
+                document.getElementById('prodName').value = p.name;
+                document.getElementById('prodPrice').value = p.price;
+                document.getElementById('prodDesc').value = p.desc;
+                document.getElementById('prodImageBase64').value = p.image;
+            }
+        }
+
+        function deleteProduct(id) {
+            if(confirm('¿Estás seguro de eliminar este perfume?')) {
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem('w_perfume_items', JSON.stringify(products));
+                renderCatalog();
+                renderAdminList();
+            }
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('adminProductList');
+            if(products.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400">No hay perfumes cargados.</p>';
+                return;
+            }
+            container.innerHTML = products.map(p => `
+                <div class="flex items-center justify-between bg-marfil-50 p-2 rounded border border-marfil-200">
+                    <div class="flex items-center gap-2 truncate">
+                        <img src="${p.image}" class="w-10 h-10 object-cover rounded">
+                        <span class="text-sm font-medium truncate">${p.name}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editProduct('${p.id}')" class="text-carbon-900 bg-white border border-marfil-200 px-2.5 py-1 rounded text-xs font-medium hover:bg-marfil-100">Editar</button>
+                        <button onclick="deleteProduct('${p.id}')" class="text-red-600 bg-white border border-marfil-200 px-2.5 py-1 rounded text-xs font-medium hover:bg-red-50">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCatalog(filteredProducts = products) {
+            const grid = document.getElementById('catalogGrid');
+            const empty = document.getElementById('emptyState');
+
+            if(filteredProducts.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            grid.innerHTML = filteredProducts.map(p => `
+                <div class="bg-white border border-marfil-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
+                    <div class="h-64 overflow-hidden bg-marfil-100 relative">
+                        <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg text-carbon-900">${p.name}</h3>
+                            <span class="font-semibold text-carbon-900 bg-marfil-100 px-2.5 py-1 rounded text-sm">${p.price}</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">${p.desc || 'Sin descripción detallada.'}</p>
+                        
+                        <div class="border-t border-marfil-200 pt-4 mt-auto">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad:</span>
+                                <div class="flex items-center border border-marfil-200 rounded-md overflow-hidden bg-marfil-50">
+                                    <button onclick="adjustQty('${p.id}', -1)" class="px-3 py-1 text-gray-600 hover:bg-marfil-200 font-bold">-</button>
+                                    <span id="qty-${p.id}" class="px-3 py-1 text-sm font-semibold">1</span>
+                                    <button onclick="adjustQty('${p.id}', 1)" class="px-3 py-1 text-gray-600 hover:bg-marfil-200 font-bold">+</button>
+                                </div>
+                            </div>
+                            <button onclick="sendOrder('${p.id}')" class="w-full bg-carbon-900 text-white py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-carbon-800 transition flex items-center justify-center gap-2 shadow-sm">
+                                <i class="fa-brands fa-whatsapp text-lg"></i> Pedir por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function adjustQty(id, delta) {
+            const el = document.getElementById(`qty-${id}`);
+            let val = parseInt(el.innerText) + delta;
+            if(val < 1) val = 1;
+            el.innerText = val;
+        }
+
+        function sendOrder(id) {
+            const p = products.find(item => item.id === id);
+            const qty = document.getElementById(`qty-${id}`).innerText;
+            const message = `¡Hola! Me interesa encargar el siguiente perfume:\n\n*${p.name}*\nCantidad: ${qty}\nPrecio unitario: ${p.price}\n\n¿Está disponible?`;
+            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.desc.toLowerCase().includes(query));
+            renderCatalog(filtered);
+        }
+
+        // Initial render
+        renderCatalog();
+    </script>
+</body>
+</html>
+
